@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/do_measurement"
+            android:icon="@drawable/ic_menu_do_measurement"
+            android:title="@string/action_measurement" />
+        <item
+            android:id="@+id/measurement_history"
+            android:icon="@drawable/ic_menu_history"
+            android:title="@string/measure_hist" />
+    </group>
+</menu>
