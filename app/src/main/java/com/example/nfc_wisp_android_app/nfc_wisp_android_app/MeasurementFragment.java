@@ -11,6 +11,7 @@ import android.support.v4.app.ListFragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v4.widget.SimpleCursorAdapter;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,6 +45,10 @@ public class MeasurementFragment extends ListFragment implements OnItemClickList
     @Override
     public void onViewCreated (View view, Bundle savedInstanceState) {
         Cursor history = dbManager.getMeasurementHistory();
+        Log.d("MEASUREMENT_FRAG", String.valueOf(history));
+        Log.d("MEASUREMENT_FRAG", String.valueOf(history.getColumnNames().length));
+        Log.d("MEASUREMENT_FRAG", history.getColumnName(0));;
+        Log.d("MEASUREMENT_FRAG", String.valueOf(history.getColumnCount()));
         if(history.getCount() != 0) {
             view.findViewById(R.id.empty_list_text).setVisibility(View.INVISIBLE);
             MeasurementHistoryAdapter adapter = new MeasurementHistoryAdapter(getActivity(), history);

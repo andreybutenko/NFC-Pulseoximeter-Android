@@ -31,6 +31,7 @@ public class ChartUpdator extends AsyncTask<Float, float[], Float> {
     private int OUTPUT_SIZE = 16;
     private int INPUT_SIZE = 16;
     private static final int MAX_WIDTH = 512;
+    private static final long MEASURE_TIME = 10 * 1000; // milliseconds
     private Tag tag;
 
 
@@ -55,53 +56,71 @@ public class ChartUpdator extends AsyncTask<Float, float[], Float> {
             ArrayList<Byte> ir_array = new ArrayList<>();
             ArrayList<Byte> red_array = new ArrayList<>();
             int count = 0;
-            while(isoDep.isConnected() && count < MAX_WIDTH) {
+            long endTime = System.currentTimeMillis() + MEASURE_TIME;
+
+            while(isoDep.isConnected() && count < MAX_WIDTH
+                    && System.currentTimeMillis() <= endTime
+                    ) {
+//
+                Log.d("CU", "===");
+//                Log.d("CU", "Cont: " + count);
+//                Log.d("CU", "Time: " + time);
+//                Log.d("CU", "Unix: " + System.currentTimeMillis());
+                Log.d("CU", "Remaining: " + String.valueOf((endTime - System.currentTimeMillis()) / 1000f));
                 isoDep.setTimeout(50000);
                 rawPayload = isoDep.transceive(out);
                 payload = decodePayload(rawPayload);
-                //float[] buf = new float[payload.length];
+
+                // The device sends 16 bytes at a time in 4 groups of 4 bytes each
+                // This loop performs some bitwise operations to get two values from this packet
+                // One is the reflection of red light, the other is the reflection of infrared light
+
                 for(int j = 0; j < INPUT_SIZE; j += 4) {
-                    /*for(int k = 0; k < 4; k++) {
-                        r_array.add(payload[j + k]);
-                    }*/
-                    //if(count > MAX_WIDTH / 4 + 1 || count == 0) {
-                        ir_array.add(payload[j]);
-                        ir_array.add(payload[j + 1]);
-                        red_array.add(payload[j + 2]);
-                        red_array.add(payload[j + 3]);
-                    //}
-                    int ir_s = 0, rd_s = 0;
+                    ir_array.add(payload[j]);
+                    ir_array.add(payload[j + 1]);
 
+                    red_array.add(payload[j + 2]);
+                    red_array.add(payload[j + 3]);
 
+                    int ir_s = 0;
                     ir_s = (payload[j + 1] & 0xFF);
                     ir_s = (ir_s << 8) | (payload[j] & 0xFF);
+
+                    int rd_s = 0;
                     rd_s = (payload[j + 3] & 0xFF);
                     rd_s = (rd_s << 8) | (payload[j + 2] & 0xFF);
 
                     ir[j / 4] = (float) ir_s;
                     red[j / 4] = (float) rd_s;
-                    //buf[j] = (float) rd;
+
                     time += 4;
                 }
+
                 float[] times = new float[]{time};
                 if(count > 0) publishProgress(ir, red, times);
                 count++;
             }
-            /*byte[] result = new byte[r_array.size()];
-            for(int i = 0; i < result.length; i++) {
-                result[i] = r_array.get(i);
-            }*/
+
+            Log.d("CU", "Complete!");
+
             byte[] result_ir = new byte[ir_array.size()];
             byte[] result_red = new byte[red_array.size()];
             for(int i = 0; i < ir_array.size(); i++) {
                 result_ir[i] = ir_array.get(i);
                 result_red[i] = red_array.get(i);
             }
+
+            Log.d("CU", "Complete + Processed!");
+
+            Snackbar.make(mMain.findViewById(android.R.id.content), "All done! :)", Snackbar.LENGTH_LONG)
+                    .setAction("Action", null).show();
+
             mMain.dbManager.insertMeasurement(result_ir, result_red, curTime);
+            Log.d("CU", "Complete + Processed + Saved!");
             isoDep.close();
             return time;
         } catch (Exception e) {
-            Snackbar.make(mMain.findViewById(android.R.id.content), "Tag is lost, please attach the tag to the cellphone.", Snackbar.LENGTH_LONG)
+            Snackbar.make(mMain.findViewById(android.R.id.content), "Tag is lost :(", Snackbar.LENGTH_LONG)
                     .setAction("Action", null).show();
             Log.e("Debug", "Fail to send new data", e);
         }
